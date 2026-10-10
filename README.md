@@ -185,8 +185,12 @@ Auto`), always (`On`), or never (`Off`). Gamepads work through SDL
 LB/North/RB = X/Y/Z, Back = Mode (the game itself only uses three of those --
 see CONTROLS). Every other button belongs to the emulated
 6-button pad, so the menu is on one of the spare buttons (see MENU BUTTON
-above); East/B backs out of it too. On touch devices virtual controls appear
-over the game, and the unlock counter in the top corner opens the menu.
+above); East/B backs out of it too. The menu takes one gamepad's presses:
+the one named under CONTROLS > 1P DEVICE while it is connected, otherwise
+any; and a press that arrives twice within 50 ms from two devices, as it
+does when DS4Windows lists a virtual pad beside the real one, counts once.
+On touch devices virtual controls appear over the game, and the unlock
+counter in the top corner opens the menu.
 
 ## Achievements
 

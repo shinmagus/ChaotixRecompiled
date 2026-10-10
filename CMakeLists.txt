@@ -163,6 +163,7 @@ if(CHAOTIX_BUILD_FRONTEND)
         src/platform/sdl_setup.cpp
         src/platform/sdl_rom_import.cpp
         src/platform/menu.cpp
+        src/platform/pad_press_filter.cpp
         src/platform/ui.cpp
         src/frontend/config.cpp
         src/frontend/debug_overlay.cpp

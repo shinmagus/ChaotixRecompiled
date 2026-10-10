@@ -25,7 +25,9 @@ if(CHAOTIX_BUILD_FRONTEND)
         ${CMAKE_SOURCE_DIR}/src/platform/sdl_rom_import.cpp
         test_menu.cpp
         test_time_attack.cpp
+        test_pad_press_filter.cpp
         ${CMAKE_SOURCE_DIR}/src/platform/menu.cpp
+        ${CMAKE_SOURCE_DIR}/src/platform/pad_press_filter.cpp
         ${CMAKE_SOURCE_DIR}/src/platform/ui.cpp
         ${CMAKE_SOURCE_DIR}/src/frontend/config.cpp
         ${CHAOTIX_EMBEDDED_SOURCES})

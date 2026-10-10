@@ -15,6 +15,7 @@
 #include "platform/sdl_setup.h"
 #include "platform/frame_pacing.h"
 #include "platform/menu.h"
+#include "platform/pad_press_filter.h"
 #include "platform/ui.h"
 #include "game/achievements.h"
 #include "game/recomp_dispatch.h"
@@ -61,6 +62,7 @@ struct App {
     SDL_Texture* texture = nullptr;
     SDL_AudioStream* audio = nullptr;
     std::vector<SDL_Gamepad*> pads;
+    DuplicatePressFilter pad_presses;  // the menu's, see pad_press_filter.h
     TouchControls touch;
     bool touch_enabled = false;
     std::map<SDL_FingerID, uint16_t> fingers;
@@ -479,9 +481,27 @@ void follow_time_attack(App& app) {
     if (return_to_title(app)) app.menu.show_page("timeattack");
 }
 
-void handle_pad_button(App& app, Uint8 button) {
-    if (app.menu.on_pad(button)) return;
-    if (SDL_GamepadButton(button) == menu_pad_button(app)) menu_back(app);
+// A press reaches the menu once, and from the gamepad the menu listens to:
+// see pad_press_filter.h for a controller the system lists twice.
+void handle_pad_button(App& app, const SDL_GamepadButtonEvent& press) {
+    std::vector<SDL_JoystickID> pads;
+    for (SDL_Gamepad* pad : app.pads) {
+        pads.push_back(SDL_GetGamepadID(pad));
+    }
+    if (!menu_takes_pad(app.cfg.device[0], pads, press.which)) {
+        LOGD("input", "gamepad #%u is not player 1's (%s): the menu leaves its press alone",
+             unsigned(press.which), app.cfg.device[0].c_str());
+        return;
+    }
+    if (!app.pad_presses.take(press.which, press.button, press.timestamp / 1000000)) {
+        const char* name = SDL_GetGamepadStringForButton(SDL_GamepadButton(press.button));
+        LOGD("input", "gamepad #%u repeats %s from another device %llu ms earlier: dropped as a copy",
+             unsigned(press.which), name ? name : "?",
+             static_cast<unsigned long long>(app.pad_presses.last_gap_ms()));
+        return;
+    }
+    if (app.menu.on_pad(press.button)) return;
+    if (SDL_GamepadButton(press.button) == menu_pad_button(app)) menu_back(app);
 }
 
 void handle_key(App& app, const SDL_KeyboardEvent& k) {
@@ -885,7 +905,7 @@ int main(int argc, char** argv) {
             switch (e.type) {
             case SDL_EVENT_QUIT: app.running = false; break;
             case SDL_EVENT_KEY_DOWN: handle_key(app, e.key); break;
-            case SDL_EVENT_GAMEPAD_BUTTON_DOWN: handle_pad_button(app, e.gbutton.button); break;
+            case SDL_EVENT_GAMEPAD_BUTTON_DOWN: handle_pad_button(app, e.gbutton); break;
             case SDL_EVENT_GAMEPAD_ADDED:
                 if (SDL_Gamepad* g = SDL_OpenGamepad(e.gdevice.which)) {
                     app.pads.push_back(g);
