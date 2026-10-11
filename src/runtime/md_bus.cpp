@@ -57,6 +57,15 @@ static bool sram_hit(const Machine& m, uint32_t a, uint32_t& idx) {
 uint32_t Machine::pad_read(int port) {
     // 3/6-button pad protocol. Buttons are active low on the wire.
     // pad_th_count counts TH edges since the last timeout (6-button sequencing).
+    // The pad forgets the sequence about 1.5 ms after the last edge, so a read
+    // that comes later starts a new one even before the next edge. Virtua
+    // Racing Deluxe ends each read with TH high after six edges and begins the
+    // next, 50 ms later, by reading before it toggles: counted from the last
+    // edge alone, that read was served the extra buttons (phase 6) where the
+    // game expected the directions, so no direction ever reached it.
+    if (input.six_button[port] && m68k_now_mclk() - pad_th_time[port] > 80000) {
+        pad_th_count[port] = 0;
+    }
     uint16_t btn = input.pad[port];
     bool th = (io_data[port] & 0x40) || !(io_ctrl[port] & 0x40);
     int phase = input.six_button[port] ? pad_th_count[port] : 0;
